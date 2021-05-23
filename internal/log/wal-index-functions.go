@@ -4,6 +4,7 @@ package log
 //The size tells us the size of the index and where to write the next entry appended to the index.
 
 import (
+	"io"
 	"os"
 
 	"github.com/tysontate/gommap"
@@ -63,4 +64,27 @@ func (i *index) Close() error {
 	}
 
 	return i.file.Close()
+}
+
+//ead(int64) takes in an offset and returns the associated record’s position in the store.
+//The given offset is relative to the segment’s base offset; 0 is always the offset of the
+//index’s first entry, 1 is the second entry, and so on.
+func (i *index) Read(in int64) (out uint32, pos uint64, err error) {
+	if i.size == 0 {
+		return 0, 0, io.EOF
+	}
+
+	if in == -1 {
+		out = uint32((i.size / entWidth) - uint64(1))
+	} else {
+		out = uint32(in)
+	}
+
+	pos = uint64(out) * entWidth
+	if i.size < pos+entWidth {
+		return 0, 0, io.EOF
+	}
+	out = enc.Uint32(i.nmap[pos : pos+offWidth])
+	pos = enc.Uint64(i.nmap[pos+offWidth : pos+entWidth])
+	return out, pos, nil
 }
