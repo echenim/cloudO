@@ -47,6 +47,9 @@ func newIndex(f *os.File, c Config) (*index, error) {
 	return idx, nil
 }
 
+//Close function makes sure the memory-mapped file has synced its data to the persisted
+// file and that the persisted file has flushed its contents to stable storage.
+//Then it truncates the persisted file to the amount of data that’s actually in it and closes the file.
 func (i *index) Close() error {
 	if err := i.nmap.Sync(gommap.MS_ASYNC); err != nil {
 		return err
